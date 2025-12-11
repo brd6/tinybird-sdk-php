@@ -109,7 +109,7 @@ jobs:
           - "8.3"
           - "8.4"
         operating-system:
-          - "macos-13"
+          - "macos-15"
           - "ubuntu-latest"
           - "windows-latest"
         dependencies:
