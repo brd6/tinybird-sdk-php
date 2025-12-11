@@ -1,0 +1,31 @@
+{
+    "name": "brd6/tinybird-sdk-php-quickstart-example",
+    "description": "Quick start example for Tinybird SDK PHP",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.1",
+        "brd6/tinybird-sdk-php": "@dev",
+        "nyholm/psr7": "^1.8",
+        "symfony/http-client": "^7.4",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "scripts": {
+        "start": "php index.php"
+    }
+}

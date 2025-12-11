@@ -1,0 +1,12 @@
+# SDK Test Events Data Source
+# For use with the Tinybird SDK PHP examples
+# Deploy with: tb deploy
+
+SCHEMA >
+    `timestamp` DateTime `json:$.timestamp`,
+    `event` String `json:$.event`,
+    `user_id` String `json:$.user_id`,
+    `properties` String `json:$.properties`
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "timestamp"

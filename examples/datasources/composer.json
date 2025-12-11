@@ -1,0 +1,26 @@
+{
+    "name": "brd6/tinybird-sdk-php-datasources-example",
+    "description": "Comprehensive Data Sources example for Tinybird SDK PHP",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.1",
+        "brd6/tinybird-sdk-php": "@dev",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}

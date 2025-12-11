@@ -1,0 +1,141 @@
+# GitHub Actions Documentation: https://docs.github.com/en/actions
+
+name: "build"
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - "main"
+
+# Cancels all previous workflow runs for the same branch that have not yet completed.
+concurrency:
+  # The concurrency group contains the workflow name and the branch name.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  COMPOSER_ROOT_VERSION: "1.99.99"
+
+jobs:
+  coding-standards:
+    name: "Coding standards"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout repository"
+        uses: "actions/checkout@v5"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.1"
+          coverage: "none"
+
+      - name: "Install dependencies (Composer)"
+        uses: "ramsey/composer-install@v3"
+
+      - name: "Check syntax (php-parallel-lint)"
+        shell: "bash"
+        run: "composer dev:lint:syntax"
+
+      - name: "Check coding standards (PHP_CodeSniffer)"
+        shell: "bash"
+        run: "composer dev:lint:style"
+
+  static-analysis:
+    name: "Static analysis"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout repository"
+        uses: "actions/checkout@v5"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.1"
+          coverage: "none"
+
+      - name: "Install dependencies (Composer)"
+        uses: "ramsey/composer-install@v3"
+
+      - name: "Statically analyze code (PHPStan)"
+        shell: "bash"
+        run: "composer dev:analyze:phpstan"
+
+      - name: "Statically analyze code (Psalm)"
+        shell: "bash"
+        run: "composer dev:analyze:psalm -- --shepherd"
+
+  code-coverage:
+    name: "Code coverage"
+    needs: ["coding-standards", "static-analysis"]
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout repository"
+        uses: "actions/checkout@v5"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "8.1"
+          coverage: "pcov"
+          ini-values: "memory_limit=-1"
+
+      - name: "Install dependencies (Composer)"
+        uses: "ramsey/composer-install@v3"
+
+      - name: "Run unit tests (PHPUnit)"
+        shell: "bash"
+        run: "composer dev:test:unit"
+
+      - name: "Publish coverage report to Codecov"
+        uses: "codecov/codecov-action@v5.5.1"
+
+  unit-tests:
+    name: "Unit tests"
+    needs: ["code-coverage"]
+    runs-on: ${{ matrix.operating-system }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version:
+          - "8.1"
+        operating-system:
+          - "macos-latest"
+          - "ubuntu-latest"
+          - "windows-latest"
+        dependencies:
+          - "lowest"
+          - "highest"
+
+    steps:
+      - name: "Configure Git (for Windows)"
+        if: ${{ matrix.operating-system == 'windows-latest' }}
+        shell: "bash"
+        run: |
+          git config --system core.autocrlf false
+          git config --system core.eol lf
+
+      - name: "Checkout repository"
+        uses: "actions/checkout@v5"
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          php-version: "${{ matrix.php-version }}"
+          coverage: "none"
+
+      - name: "Install dependencies (Composer)"
+        uses: "ramsey/composer-install@v3"
+        with:
+          dependency-versions: "${{ matrix.dependencies }}"
+          composer-options: "${{ matrix.composer-options }}"
+
+      - name: "Run unit tests (PHPUnit)"
+        shell: "bash"
+        run: "composer dev:test:unit"

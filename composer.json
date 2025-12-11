@@ -1,0 +1,98 @@
+{
+    "name": "brd6/tinybird-sdk-php",
+    "description": "Tinybird SDK for PHP",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "tinybird",
+        "tinybird-sdk",
+        "tinybird-api",
+        "analytics",
+        "php"
+    ],
+    "authors": [
+        {
+            "name": "brd6",
+            "email": "hello@berdrigue.com",
+            "homepage": "https://berdrigue.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "php-http/client-common": "^2.7",
+        "php-http/discovery": "^1.19",
+        "php-http/httplug": "^2.4",
+        "psr/http-client-implementation": "^1.0",
+        "psr/http-message": "^2.0"
+    },
+    "require-dev": {
+        "ergebnis/composer-normalize": "^2.42",
+        "mockery/mockery": "^1.6",
+        "nyholm/psr7": "^1.8",
+        "php-http/message": "^1.16",
+        "php-parallel-lint/php-console-highlighter": "^1.0",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
+        "phpstan/phpstan": "^1.10",
+        "phpstan/phpstan-mockery": "^1.1",
+        "phpstan/phpstan-phpunit": "^1.3",
+        "phpunit/phpunit": "^10.5",
+        "roave/security-advisories": "dev-latest",
+        "slevomat/coding-standard": "^8.14",
+        "squizlabs/php_codesniffer": "^3.9",
+        "symfony/http-client": "^6.4 || ^7.0"
+    },
+    "suggest": {
+        "nyholm/psr7": "PSR-7 message implementation",
+        "symfony/http-client": "HTTP client"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Brd6\\TinybirdSdk\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Brd6\\Test\\TinybirdSdk\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true,
+            "php-http/discovery": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "dev:all": [
+            "@dev:lint:all",
+            "@dev:analyze",
+            "@dev:test"
+        ],
+        "dev:analyze": "phpstan analyse --ansi",
+        "dev:lint:all": [
+            "@dev:lint:syntax",
+            "@dev:lint:style"
+        ],
+        "dev:lint:fix": "phpcbf --cache=build/cache/phpcs.cache",
+        "dev:lint:style": "phpcs --colors --cache=build/cache/phpcs.cache",
+        "dev:lint:syntax": "parallel-lint --colors src tests",
+        "dev:test": "phpunit",
+        "dev:test:coverage": "phpunit --coverage-html build/coverage",
+        "test": "@dev:test"
+    },
+    "scripts-descriptions": {
+        "dev:all": "Runs all dev commands",
+        "dev:analyze": "Runs PHPStan static analyzer",
+        "dev:lint:all": "Runs all linting checks",
+        "dev:lint:fix": "Auto-fixes coding standards issues",
+        "dev:lint:style": "Checks for coding standards issues",
+        "dev:lint:syntax": "Checks for syntax errors",
+        "dev:test": "Runs unit tests",
+        "dev:test:coverage": "Runs unit tests with coverage report",
+        "test": "Runs unit tests"
+    }
+}
+

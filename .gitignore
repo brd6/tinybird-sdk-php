@@ -1,0 +1,16 @@
+/vendor/
+composer.lock
+/build/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+.phpunit.result.cache
+.phpunit.cache/
+phpstan.neon
+phpcs.xml
+.phpcs-cache
+

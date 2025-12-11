@@ -1,0 +1,11 @@
+{
+    "host": "https://api.europe-west2.gcp.tinybird.co",
+    "id": "52459443-ecfe-41a3-8846-ddb83b41c725",
+    "name": "derioanalytics",
+    "scope": "admin",
+    "token": "p.eyJ1IjogIjUyNDU5NDQzLWVjZmUtNDFhMy04ODQ2LWRkYjgzYjQxYzcyNSIsICJpZCI6ICI1NjNjNDdlYi1jOWQ4LTQ1YjgtYmE1Mi1kOWEzYTRmM2I4ZmMiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.ne_er_b46zFQ77Odhb3scqoXnESTtFWlhGaFjEqORfA",
+    "tokens": {
+        "https://api.europe-west2.gcp.tinybird.co": "p.eyJ1IjogIjUyNDU5NDQzLWVjZmUtNDFhMy04ODQ2LWRkYjgzYjQxYzcyNSIsICJpZCI6ICI1NjNjNDdlYi1jOWQ4LTQ1YjgtYmE1Mi1kOWEzYTRmM2I4ZmMiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.ne_er_b46zFQ77Odhb3scqoXnESTtFWlhGaFjEqORfA"
+    },
+    "version": "1.0.5"
+}

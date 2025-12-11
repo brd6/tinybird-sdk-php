@@ -1,0 +1,31 @@
+{
+    "name": "brd6/tinybird-sdk-php-events-example",
+    "description": "Events API example for Tinybird SDK PHP",
+    "type": "project",
+    "require": {
+        "php": "^8.1",
+        "brd6/tinybird-sdk-php": "*",
+        "vlucas/phpdotenv": "^5.6",
+        "nyholm/psr7": "^1.8",
+        "symfony/http-client": "^6.4|^7.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}
