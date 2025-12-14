@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Brd6\Test\TinybirdSdk\Endpoint;
 
+use Brd6\Test\TinybirdSdk\Mock\MockHttpClient;
+use Brd6\Test\TinybirdSdk\Mock\MockResponseFactory;
 use Brd6\Test\TinybirdSdk\TestCase;
 use Brd6\TinybirdSdk\ClientOptions;
 use Brd6\TinybirdSdk\Endpoint\QueryEndpoint;
 use Brd6\TinybirdSdk\Enum\QueryFormat;
+use Brd6\TinybirdSdk\HttpClient\BatchResult;
 use Brd6\TinybirdSdk\HttpClient\HttpRequestHandler;
 use Brd6\TinybirdSdk\RequestParameters\QueryParams;
 use Brd6\TinybirdSdk\Resource\QueryResult;
-use Brd6\Test\TinybirdSdk\Mock\MockHttpClient;
-use Brd6\Test\TinybirdSdk\Mock\MockResponseFactory;
 
 class QueryEndpointTest extends TestCase
 {
@@ -259,5 +260,159 @@ class QueryEndpointTest extends TestCase
         $result = $endpoint->sql('SELECT 1');
 
         $this->assertSame($rawData, $result->getRawData());
+    }
+
+    public function testBatchSqlReturnsResults(): void
+    {
+        $requestCount = 0;
+        $mockClient = new MockHttpClient(
+            function (string $method, string $url, array $options) use (&$requestCount): MockResponseFactory {
+                $requestCount++;
+                $query = $options['query']['q'] ?? '';
+
+                if (str_contains($query, 'users')) {
+                    return new MockResponseFactory(
+                        json_encode(['data' => [['count' => 100]], 'rows' => 1], JSON_THROW_ON_ERROR),
+                    );
+                }
+
+                return new MockResponseFactory(
+                    json_encode(['data' => [['count' => 500]], 'rows' => 1], JSON_THROW_ON_ERROR),
+                );
+            },
+        );
+
+        $options = (new ClientOptions())
+            ->setToken('test-token')
+            ->setHttpClient($mockClient);
+
+        $handler = new HttpRequestHandler($options);
+        $endpoint = new QueryEndpoint($handler);
+
+        $results = $endpoint->batchSql([
+            'users' => 'SELECT count() FROM users',
+            'events' => 'SELECT count() FROM events',
+        ]);
+
+        $this->assertCount(2, $results);
+        $this->assertArrayHasKey('users', $results);
+        $this->assertArrayHasKey('events', $results);
+        $this->assertSame(2, $requestCount);
+
+        $this->assertInstanceOf(BatchResult::class, $results['users']);
+        $this->assertTrue($results['users']->isSuccess());
+        $this->assertInstanceOf(QueryResult::class, $results['users']->getData());
+        $this->assertSame(100, $results['users']->getData()->data[0]['count']);
+
+        $this->assertTrue($results['events']->isSuccess());
+        $this->assertSame(500, $results['events']->getData()->data[0]['count']);
+    }
+
+    public function testBatchSqlAppendsFormat(): void
+    {
+        $capturedQueries = [];
+        $mockClient = new MockHttpClient(
+            function (string $method, string $url, array $options) use (&$capturedQueries): MockResponseFactory {
+                $capturedQueries[] = $options['query']['q'] ?? '';
+
+                return new MockResponseFactory(
+                    json_encode(['data' => [], 'rows' => 0], JSON_THROW_ON_ERROR),
+                );
+            },
+        );
+
+        $options = (new ClientOptions())
+            ->setToken('test-token')
+            ->setHttpClient($mockClient);
+
+        $handler = new HttpRequestHandler($options);
+        $endpoint = new QueryEndpoint($handler);
+
+        $endpoint->batchSql([
+            'q1' => 'SELECT 1',
+            'q2' => 'SELECT 2',
+        ]);
+
+        $this->assertCount(2, $capturedQueries);
+        foreach ($capturedQueries as $query) {
+            $this->assertStringContainsString('FORMAT JSON', $query);
+        }
+    }
+
+    public function testBatchSqlWithCustomFormat(): void
+    {
+        $capturedQueries = [];
+        $mockClient = new MockHttpClient(
+            function (string $method, string $url, array $options) use (&$capturedQueries): MockResponseFactory {
+                $capturedQueries[] = $options['query']['q'] ?? '';
+
+                return new MockResponseFactory(
+                    json_encode(['data' => [], 'rows' => 0], JSON_THROW_ON_ERROR),
+                );
+            },
+        );
+
+        $options = (new ClientOptions())
+            ->setToken('test-token')
+            ->setHttpClient($mockClient);
+
+        $handler = new HttpRequestHandler($options);
+        $endpoint = new QueryEndpoint($handler);
+
+        $endpoint->batchSql([
+            'q1' => 'SELECT 1',
+        ], QueryFormat::CSV_WITH_NAMES);
+
+        $this->assertStringContainsString('FORMAT CSVWithNames', $capturedQueries[0]);
+    }
+
+    public function testBatchSqlHandlesPartialFailure(): void
+    {
+        $mockClient = new MockHttpClient(
+            function (string $method, string $url, array $options): MockResponseFactory {
+                $query = $options['query']['q'] ?? '';
+
+                if (str_contains($query, 'invalid')) {
+                    return new MockResponseFactory(
+                        json_encode(['error' => 'Table not found'], JSON_THROW_ON_ERROR),
+                        ['http_code' => 400],
+                    );
+                }
+
+                return new MockResponseFactory(
+                    json_encode(['data' => [['count' => 1]], 'rows' => 1], JSON_THROW_ON_ERROR),
+                );
+            },
+        );
+
+        $options = (new ClientOptions())
+            ->setToken('test-token')
+            ->setHttpClient($mockClient);
+
+        $handler = new HttpRequestHandler($options);
+        $endpoint = new QueryEndpoint($handler);
+
+        $results = $endpoint->batchSql([
+            'valid' => 'SELECT count() FROM users',
+            'invalid' => 'SELECT * FROM invalid_table',
+        ]);
+
+        $this->assertCount(2, $results);
+
+        $this->assertTrue($results['valid']->isSuccess());
+        $this->assertSame(1, $results['valid']->getData()->data[0]['count']);
+
+        $this->assertTrue($results['invalid']->isFailure());
+        $this->assertNotNull($results['invalid']->getException());
+        $this->assertNull($results['invalid']->getDataOrNull());
+    }
+
+    public function testBatchSqlEmptyQueries(): void
+    {
+        $endpoint = $this->createEndpoint();
+
+        $results = $endpoint->batchSql([]);
+
+        $this->assertSame([], $results);
     }
 }

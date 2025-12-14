@@ -6,6 +6,8 @@ namespace Brd6\TinybirdSdk\Endpoint;
 
 use Brd6\TinybirdSdk\Constant\ContentType;
 use Brd6\TinybirdSdk\Enum\QueryFormat;
+use Brd6\TinybirdSdk\HttpClient\BatchRequestItem;
+use Brd6\TinybirdSdk\HttpClient\BatchResult;
 use Brd6\TinybirdSdk\RequestParameters\QueryParams;
 use Brd6\TinybirdSdk\Resource\QueryResult;
 
@@ -90,6 +92,35 @@ class QueryEndpoint extends AbstractEndpoint
         array $params = [],
     ): QueryResult {
         return $this->sql($query, $format, new QueryParams(pipeline: $pipeline), $params);
+    }
+
+    /**
+     * Batch version of sql - execute multiple SQL queries concurrently.
+     *
+     * @param array<string, string> $queries Key => SQL query
+     * @return array<string, BatchResult<QueryResult>>
+     *
+     * @example
+     * $results = $tinybird->query()->batchSql([
+     *     'total_users' => 'SELECT count() FROM users',
+     *     'active_today' => 'SELECT count() FROM events WHERE date = today()',
+     * ]);
+     */
+    public function batchSql(array $queries, QueryFormat $format = QueryFormat::JSON): array
+    {
+        $requests = [];
+
+        foreach ($queries as $key => $query) {
+            $requests[$key] = BatchRequestItem::get(
+                self::PATH,
+                ['q' => $this->formatQuery($query, $format)],
+            );
+        }
+
+        return $this->transformBatchResponses(
+            $this->batchRequest($requests),
+            static fn (array $data) => QueryResult::fromArray($data),
+        );
     }
 
     private function formatQuery(string $query, QueryFormat $format = QueryFormat::JSON): string

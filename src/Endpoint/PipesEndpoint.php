@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Brd6\TinybirdSdk\Endpoint;
 
 use Brd6\TinybirdSdk\Enum\PipeFormat;
+use Brd6\TinybirdSdk\HttpClient\BatchRequestItem;
+use Brd6\TinybirdSdk\HttpClient\BatchResult;
 use Brd6\TinybirdSdk\RequestParameters\PipesListParams;
 use Brd6\TinybirdSdk\Resource\ExplainResult;
 use Brd6\TinybirdSdk\Resource\Pipe;
@@ -74,6 +76,53 @@ class PipesEndpoint extends AbstractEndpoint
     public function query(string $name, array $params = []): QueryResult
     {
         return $this->getData($name, PipeFormat::JSON, $params);
+    }
+
+    /**
+     * Batch version of getData - query multiple pipes in specified format.
+     *
+     * Use `pipe#alias` to query the same pipe multiple times.
+     *
+     * @param array<string, array<string, mixed>> $queries Pipe name (or pipe#alias) => params
+     * @return array<string, BatchResult<QueryResult>>
+     */
+    public function batchGetData(array $queries, PipeFormat $format = PipeFormat::JSON): array
+    {
+        $requests = [];
+
+        foreach ($queries as $key => $params) {
+            $pipeName = $this->extractPipeName((string) $key);
+
+            $requests[$key] = BatchRequestItem::get(
+                self::PATH . '/' . $pipeName . '.' . $format->value,
+                $params,
+            );
+        }
+
+        return $this->transformBatchResponses(
+            $this->batchRequest($requests),
+            static fn (array $data) => QueryResult::fromArray($data),
+        );
+    }
+
+    /**
+     * Batch version of query - query multiple pipes concurrently.
+     *
+     * Use `pipe#alias` to query the same pipe multiple times.
+     *
+     * @param array<string, array<string, mixed>> $queries Pipe name (or pipe#alias) => params
+     * @return array<string, BatchResult<QueryResult>>
+     */
+    public function batchQuery(array $queries): array
+    {
+        return $this->batchGetData($queries, PipeFormat::JSON);
+    }
+
+    private function extractPipeName(string $key): string
+    {
+        $pos = strpos($key, '#');
+
+        return $pos !== false ? substr($key, 0, $pos) : $key;
     }
 
     /**
